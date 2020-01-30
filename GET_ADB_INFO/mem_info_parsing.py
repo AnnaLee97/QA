@@ -12,7 +12,6 @@ from openpyxl.styles import Font, Alignment
 
 def sendADB(req) :
     sysMsg = subprocess.getstatusoutput(req)
-    print('cmd: '+sysMsg[1])
     return sysMsg[1]
 
 def xlsx_idle(path) :
@@ -22,19 +21,29 @@ def xlsx_idle(path) :
         wb = openpyxl.Workbook()
     
     sh = wb.create_sheet(str(datetime.datetime.now().date()), 0)
-    sh.merge_cells('A1:G1')
+    sh.merge_cells('A1:O1')
     sh['A1'] = sendADB('adb shell date')+'   memory information'
     sh.merge_cells('A2:A3')
     sh.merge_cells('B2:F2')
-    sh['A2'] = 'Uptime'
+    sh['A2'] = 'Time'
     sh['B2'] = 'RAM info (Kbytes)'
     sh['B3'] = 'TOTAL'
     sh['C3'] = 'Free'
     sh['D3'] = 'Used'
     sh['E3'] = 'Lost'
     sh['F3'] = 'ZRAM'
-    sh.merge_cells('G2:G3')
-    sh['G2'] = 'filename'
+    sh.merge_cells('G2:N2')
+    sh['G2'] = 'Top4 process'
+    sh['G3'] = 'Name'
+    sh['H3'] = 'Kbytes'
+    sh['I3'] = 'Name'
+    sh['J3'] = 'Kbytes'
+    sh['K3'] = 'Name'
+    sh['L3'] = 'Kbytes'
+    sh['M3'] = 'Name'
+    sh['N3'] = 'Kbytes'
+    sh.merge_cells('O2:O3')
+    sh['O2'] = 'filename'
     
     # style
     sh.freeze_panes = 'A4'
@@ -56,14 +65,17 @@ def drop_file(path) :
 
     command = 'adb shell dumpsys meminfo > ' + path + 'mem_log/' + filename
     sendADB(command)
+    print('   cmd: '+command)
+
+    # time
+    tim = sendADB('adb shell date').split(' ')[3]
 
     # read log file
     obj = []
     f = open(path + 'mem_log/' + filename, 'r')
     temp = f.readlines()
-    # uptime
-    tmp = temp[1].split(' ')
-    obj.append(tmp[1])
+    # time
+    obj.append(tim)
     # RAM info
     i = -6
     while i < -1 :
@@ -71,6 +83,12 @@ def drop_file(path) :
         tmp = line[1].split('K')
         obj.append(tmp[0])
         i += 1
+    # Top4 process
+    for i in range(4, 8) :
+        line = temp[i].split(':')
+        tmp = line[1].split(' ')
+        obj.append(tmp[1])
+        obj.append(line[0][:-1])
     # filename
     obj.append(filename)
 
