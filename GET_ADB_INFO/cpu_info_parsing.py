@@ -53,7 +53,6 @@ def xlsx_idle(path) :
 
 def sendADB(req) :
     sysMsg = subprocess.getstatusoutput(req)
-    print('cmd: '+sysMsg[1])
     return sysMsg[1]
 
 def drop_file(path, num, tim) :
@@ -61,6 +60,7 @@ def drop_file(path, num, tim) :
     current_time = date_get.strftime('%m%d_%H_%M_%S')
     filename = 'cpu_log_'+current_time+'.txt'
 
+    #command = 'adb shell top -n 1 -s cpu > D://python/log/' + filename
     command = 'adb shell dumpsys cpuinfo > '+ path + 'cpu_log/' + filename
 
     # get cpu info txt file
@@ -77,12 +77,14 @@ def drop_file(path, num, tim) :
         f.close()
         os.remove(path + 'cpu_log/' + filename)
         return [obj, 1]
+    print('   cmd: '+command)
     obj.append(info[0])
     obj.append(info[1])
     ## CPU usage
     line = temp[-1].split(' ')
     obj.append(line[0][:-1]) #total
     tag = ('user', 'kernel', 'iowait', 'irq', 'softirq')
+    tag_flag = [0,0,0,0,0]
     j = 0
     for i in range(3, len(line), 3) :
         if i == len(line)-1 :
@@ -91,14 +93,20 @@ def drop_file(path, num, tim) :
             tg = line[i]
         
         if  j == tag.index(tg) :
+            tag_flag[j] = 1
             obj.append(line[i-1][:-1])
             j += 1
         else :
             while j < tag.index(tg) :
+                tag_flag[j] = 1
                 obj.append('')
                 j += 1
+            tag_flag[j] = 1
             obj.append(line[i-1][:-1])
             j += 1
+    for i in range(j, len(tag_flag)) :
+        if tag_flag[j] == 0 :
+            obj.append('')
     ## max user
     tmp = temp[2].split(' ')
     obj.append(tmp[3][:-1].split('/')[1]) # max used pkg name
